@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { formatRelativeTime } from '@/lib/utils';
 
 export default function AuditsPage() {
-  const { audits, loading } = useAudits();
+  const { audits, loading, error } = useAudits();
 
   return (
     <div className="space-y-6">
@@ -20,7 +20,11 @@ export default function AuditsPage() {
         </Link>
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-sm font-medium text-red-800">{error}</p>
+        </div>
+      ) : loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div

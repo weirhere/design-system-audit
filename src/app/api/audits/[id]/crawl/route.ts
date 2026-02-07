@@ -24,10 +24,25 @@ export async function POST(
       );
     }
 
-    if (!['draft', 'crawled', 'error'].includes(audit.status)) {
+    if (!['draft', 'crawled', 'error', 'complete'].includes(audit.status)) {
       return NextResponse.json(
-        { error: `Cannot start crawl when audit status is "${audit.status}"` },
+        { error: `Cannot start crawl while audit is "${audit.status}". Wait for the current operation to finish.` },
         { status: 409 }
+      );
+    }
+
+    if (getCrawl(id)) {
+      return NextResponse.json(
+        { error: 'A crawl is already running for this audit.' },
+        { status: 409 }
+      );
+    }
+
+    const productUrls: string[] = JSON.parse(audit.productUrls);
+    if (productUrls.length === 0) {
+      return NextResponse.json(
+        { error: 'No product URLs configured. Add at least one URL in the setup page.' },
+        { status: 400 }
       );
     }
 
@@ -43,8 +58,10 @@ export async function POST(
     );
   } catch (error) {
     console.error('[POST /api/audits/[id]/crawl] Error:', error);
+    const message =
+      error instanceof Error ? error.message : 'An unexpected error occurred';
     return NextResponse.json(
-      { error: 'Failed to start crawl' },
+      { error: `Failed to start crawl: ${message}` },
       { status: 500 }
     );
   }
