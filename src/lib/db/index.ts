@@ -4,10 +4,14 @@ import * as schema from './schema';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const DB_PATH = join(process.cwd(), 'data', 'audit.db');
+const DB_DIR = process.env.NODE_ENV === 'production'
+  ? '/tmp/data'
+  : join(process.cwd(), 'data');
+
+const DB_PATH = join(DB_DIR, 'audit.db');
 
 function createDb() {
-  const dir = join(process.cwd(), 'data');
+  const dir = DB_DIR;
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
