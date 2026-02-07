@@ -1,34 +1,22 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { createClient } from '@/lib/supabase/server';
 import { getDb } from '@/lib/db';
-import { audits, users } from '@/lib/db/schema';
+import { audits } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 type AuthError = { error: NextResponse };
 type AuthSuccess = { userId: string };
 type AuditOwnerSuccess = { userId: string; audit: typeof audits.$inferSelect };
 
-/** Ensure the user record exists in the DB (handles ephemeral DB on serverless) */
-async function ensureUser(session: { user: { id: string; name?: string | null; email?: string | null; image?: string | null } }) {
-  const db = getDb();
-  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.id, session.user.id)).limit(1);
-  if (!existing) {
-    await db.insert(users).values({
-      id: session.user.id,
-      name: session.user.name ?? null,
-      email: session.user.email ?? null,
-      image: session.user.image ?? null,
-    });
-  }
-}
-
 export async function requireAuth(): Promise<AuthError | AuthSuccess> {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
-  await ensureUser(session);
-  return { userId: session.user.id };
+
+  return { userId: user.id };
 }
 
 export async function requireAuditOwner(auditId: string): Promise<AuthError | AuditOwnerSuccess> {
