@@ -14,6 +14,7 @@ export default function AuditPage() {
   const { id } = useParams<{ id: string }>();
   const { audit, loading, refetch } = useAudit(id ?? null);
   const [crawling, setCrawling] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [summaries, setSummaries] = useState<TokenSummary[]>([]);
   const [summaryLoading, setSummaryLoading] = useState(false);
 
@@ -65,7 +66,12 @@ export default function AuditPage() {
   };
 
   const handleCrawlStart = () => {
+    setError(null);
     setCrawling(true);
+  };
+
+  const handleCrawlError = (message: string) => {
+    setError(message);
   };
 
   const handleCrawlComplete = () => {
@@ -97,8 +103,15 @@ export default function AuditPage() {
           auditId={audit.id}
           disabled={isCrawling}
           onStart={handleCrawlStart}
+          onError={handleCrawlError}
         />
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-sm font-medium text-red-800">{error}</p>
+        </div>
+      )}
 
       {isCrawling && (
         <Card>

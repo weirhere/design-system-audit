@@ -7,9 +7,10 @@ interface CrawlButtonProps {
   auditId: string;
   disabled?: boolean;
   onStart?: () => void;
+  onError?: (message: string) => void;
 }
 
-export function CrawlButton({ auditId, disabled, onStart }: CrawlButtonProps) {
+export function CrawlButton({ auditId, disabled, onStart, onError }: CrawlButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -17,12 +18,14 @@ export function CrawlButton({ auditId, disabled, onStart }: CrawlButtonProps) {
     try {
       const res = await fetch(`/api/audits/${auditId}/crawl`, { method: 'POST' });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to start crawl');
+        const data = await res.json().catch(() => ({}));
+        const message = data.error || `Server returned ${res.status}`;
+        onError?.(message);
+        return;
       }
       onStart?.();
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to start crawl');
+      onError?.(e instanceof Error ? e.message : 'Failed to start crawl');
     } finally {
       setLoading(false);
     }

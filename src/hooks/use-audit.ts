@@ -14,7 +14,10 @@ export function useAudit(auditId: string | null) {
     setError(null);
     try {
       const res = await fetch(`/api/audits/${auditId}`);
-      if (!res.ok) throw new Error('Failed to fetch audit');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to load audit (${res.status})`);
+      }
       const data = await res.json();
       setAudit(data);
     } catch (e) {
@@ -41,7 +44,10 @@ export function useAudits() {
     setError(null);
     try {
       const res = await fetch('/api/audits');
-      if (!res.ok) throw new Error('Failed to fetch audits');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to load audits (${res.status})`);
+      }
       const data = await res.json();
       setAudits(data);
     } catch (e) {
