@@ -11,7 +11,7 @@ type AuditOwnerSuccess = { userId: string; audit: typeof audits.$inferSelect };
 /** Ensure the user record exists in the DB (handles ephemeral DB on serverless) */
 async function ensureUser(session: { user: { id: string; name?: string | null; email?: string | null; image?: string | null } }) {
   const db = getDb();
-  const existing = await db.select({ id: users.id }).from(users).where(eq(users.id, session.user.id)).get();
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.id, session.user.id)).limit(1);
   if (!existing) {
     await db.insert(users).values({
       id: session.user.id,
