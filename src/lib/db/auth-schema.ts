@@ -1,14 +1,14 @@
-import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, timestamp, integer, primaryKey } from 'drizzle-orm/pg-core';
 
-export const users = sqliteTable('user', {
+export const users = pgTable('user', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name'),
   email: text('email').unique(),
-  emailVerified: integer('emailVerified', { mode: 'timestamp_ms' }),
+  emailVerified: timestamp('emailVerified', { mode: 'date' }),
   image: text('image'),
 });
 
-export const accounts = sqliteTable('account', {
+export const accounts = pgTable('account', {
   userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: text('type').notNull(),
   provider: text('provider').notNull(),
@@ -24,16 +24,16 @@ export const accounts = sqliteTable('account', {
   pk: primaryKey({ columns: [table.provider, table.providerAccountId] }),
 }));
 
-export const sessions = sqliteTable('session', {
+export const sessions = pgTable('session', {
   sessionToken: text('sessionToken').primaryKey(),
   userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  expires: integer('expires', { mode: 'timestamp_ms' }).notNull(),
+  expires: timestamp('expires', { mode: 'date' }).notNull(),
 });
 
-export const verificationTokens = sqliteTable('verificationToken', {
+export const verificationTokens = pgTable('verificationToken', {
   identifier: text('identifier').notNull(),
   token: text('token').notNull(),
-  expires: integer('expires', { mode: 'timestamp_ms' }).notNull(),
+  expires: timestamp('expires', { mode: 'date' }).notNull(),
 }, (table) => ({
   pk: primaryKey({ columns: [table.identifier, table.token] }),
 }));

@@ -1,9 +1,9 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, real, boolean } from 'drizzle-orm/pg-core';
 import { users } from './auth-schema';
 
 export { users, accounts, sessions, verificationTokens } from './auth-schema';
 
-export const audits = sqliteTable('audits', {
+export const audits = pgTable('audits', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   createdAt: text('created_at').notNull(),
@@ -17,7 +17,7 @@ export const audits = sqliteTable('audits', {
   userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
 });
 
-export const crawlJobs = sqliteTable('crawl_jobs', {
+export const crawlJobs = pgTable('crawl_jobs', {
   id: text('id').primaryKey(),
   auditId: text('audit_id').notNull().references(() => audits.id, { onDelete: 'cascade' }),
   url: text('url').notNull(),
@@ -31,7 +31,7 @@ export const crawlJobs = sqliteTable('crawl_jobs', {
   progress: real('progress').notNull().default(0),
 });
 
-export const crawledPages = sqliteTable('crawled_pages', {
+export const crawledPages = pgTable('crawled_pages', {
   id: text('id').primaryKey(),
   crawlJobId: text('crawl_job_id').notNull().references(() => crawlJobs.id, { onDelete: 'cascade' }),
   auditId: text('audit_id').notNull().references(() => audits.id, { onDelete: 'cascade' }),
@@ -41,7 +41,7 @@ export const crawledPages = sqliteTable('crawled_pages', {
   crawledAt: text('crawled_at').notNull(),
 });
 
-export const extractedTokens = sqliteTable('extracted_tokens', {
+export const extractedTokens = pgTable('extracted_tokens', {
   id: text('id').primaryKey(),
   auditId: text('audit_id').notNull().references(() => audits.id, { onDelete: 'cascade' }),
   crawledPageId: text('crawled_page_id').notNull().references(() => crawledPages.id, { onDelete: 'cascade' }),
@@ -59,11 +59,11 @@ export const extractedTokens = sqliteTable('extracted_tokens', {
     enum: ['unclassified', 'inherit', 'adapt', 'extend'],
   }).notNull().default('unclassified'),
   classificationConfidence: real('classification_confidence').notNull().default(0),
-  classificationOverridden: integer('classification_overridden', { mode: 'boolean' }).notNull().default(false),
+  classificationOverridden: boolean('classification_overridden').notNull().default(false),
   metadata: text('metadata'), // JSON
 });
 
-export const extractedComponents = sqliteTable('extracted_components', {
+export const extractedComponents = pgTable('extracted_components', {
   id: text('id').primaryKey(),
   auditId: text('audit_id').notNull().references(() => audits.id, { onDelete: 'cascade' }),
   sourceProduct: text('source_product').notNull(),
@@ -78,10 +78,10 @@ export const extractedComponents = sqliteTable('extracted_components', {
     enum: ['unclassified', 'inherit', 'adapt', 'extend'],
   }).notNull().default('unclassified'),
   classificationConfidence: real('classification_confidence').notNull().default(0),
-  classificationOverridden: integer('classification_overridden', { mode: 'boolean' }).notNull().default(false),
+  classificationOverridden: boolean('classification_overridden').notNull().default(false),
 });
 
-export const extractedPatterns = sqliteTable('extracted_patterns', {
+export const extractedPatterns = pgTable('extracted_patterns', {
   id: text('id').primaryKey(),
   auditId: text('audit_id').notNull().references(() => audits.id, { onDelete: 'cascade' }),
   sourceProduct: text('source_product').notNull(),
@@ -93,10 +93,10 @@ export const extractedPatterns = sqliteTable('extracted_patterns', {
     enum: ['unclassified', 'inherit', 'adapt', 'extend'],
   }).notNull().default('unclassified'),
   classificationConfidence: real('classification_confidence').notNull().default(0),
-  classificationOverridden: integer('classification_overridden', { mode: 'boolean' }).notNull().default(false),
+  classificationOverridden: boolean('classification_overridden').notNull().default(false),
 });
 
-export const comparisonResults = sqliteTable('comparison_results', {
+export const comparisonResults = pgTable('comparison_results', {
   id: text('id').primaryKey(),
   auditId: text('audit_id').notNull().references(() => audits.id, { onDelete: 'cascade' }),
   entityType: text('entity_type', {
@@ -111,7 +111,7 @@ export const comparisonResults = sqliteTable('comparison_results', {
   }).notNull().default('unclassified'),
 });
 
-export const migrationTasks = sqliteTable('migration_tasks', {
+export const migrationTasks = pgTable('migration_tasks', {
   id: text('id').primaryKey(),
   auditId: text('audit_id').notNull().references(() => audits.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
