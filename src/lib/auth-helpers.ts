@@ -1,18 +1,33 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getDb } from '@/lib/db';
-import { audits } from '@/lib/db/schema';
+import { audits, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 type AuthError = { error: NextResponse };
 type AuthSuccess = { userId: string };
 type AuditOwnerSuccess = { userId: string; audit: typeof audits.$inferSelect };
 
+/** Ensure the user record exists in the DB (handles ephemeral DB on serverless) */
+async function ensureUser(session: { user: { id: string; name?: string | null; email?: string | null; image?: string | null } }) {
+  const db = getDb();
+  const existing = await db.select({ id: users.id }).from(users).where(eq(users.id, session.user.id)).get();
+  if (!existing) {
+    await db.insert(users).values({
+      id: session.user.id,
+      name: session.user.name ?? null,
+      email: session.user.email ?? null,
+      image: session.user.image ?? null,
+    });
+  }
+}
+
 export async function requireAuth(): Promise<AuthError | AuthSuccess> {
   const session = await auth();
   if (!session?.user?.id) {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
+  await ensureUser(session);
   return { userId: session.user.id };
 }
 
