@@ -21,7 +21,8 @@ export async function GET(
         });
       }
 
-      case 'csv': {
+      case 'csv':
+      case 'csv-tokens': {
         const { exportTokensCsv } = await import('@/lib/export/csv');
         const csv = await exportTokensCsv(id);
 
@@ -30,6 +31,19 @@ export async function GET(
           headers: {
             'Content-Type': 'text/csv',
             'Content-Disposition': `attachment; filename="audit-${id}-tokens.csv"`,
+          },
+        });
+      }
+
+      case 'csv-comparison': {
+        const { exportComparisonCsv } = await import('@/lib/export/csv');
+        const csv = await exportComparisonCsv(id);
+
+        return new NextResponse(csv, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': `attachment; filename="audit-${id}-comparison.csv"`,
           },
         });
       }

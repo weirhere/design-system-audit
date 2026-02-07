@@ -3,6 +3,8 @@ import { getDb } from '@/lib/db';
 import {
   audits,
   extractedTokens,
+  extractedComponents,
+  extractedPatterns,
   comparisonResults,
 } from '@/lib/db/schema';
 import { tokenDistance } from '@/lib/analysis/similarity';
@@ -148,6 +150,95 @@ export async function runComparison(auditId: string): Promise<void> {
       canonicalValue,
       productValues: JSON.stringify(productValues),
       divergenceScore: maxDivergence,
+      classification: 'unclassified',
+    });
+  }
+
+  // Compare components across products
+  const components = await db
+    .select()
+    .from(extractedComponents)
+    .where(eq(extractedComponents.auditId, auditId));
+
+  // Group components by name
+  const componentsByName = new Map<string, Map<string, number>>();
+  for (const comp of components) {
+    if (!componentsByName.has(comp.name)) {
+      componentsByName.set(comp.name, new Map());
+    }
+    const productMap = componentsByName.get(comp.name)!;
+    const current = productMap.get(comp.sourceProduct) ?? 0;
+    productMap.set(comp.sourceProduct, current + comp.frequency);
+  }
+
+  for (const [name, productFreqs] of Array.from(componentsByName.entries())) {
+    const products = Array.from(productFreqs.keys());
+    const allProductUrls: string[] = JSON.parse(audit.productUrls);
+    if (audit.parentSystemUrl) allProductUrls.unshift(audit.parentSystemUrl);
+
+    // Canonical = present in parent or most products
+    const presentIn = products.length;
+    const totalProducts = allProductUrls.length;
+    const divergence = 1 - presentIn / totalProducts;
+
+    const productValues: Record<string, string> = {};
+    for (const product of allProductUrls) {
+      const freq = productFreqs.get(product);
+      productValues[product] = freq ? `present (${freq}x)` : 'absent';
+    }
+
+    await db.insert(comparisonResults).values({
+      id: generateId(),
+      auditId,
+      entityType: 'component',
+      entityProperty: `component::${name}`,
+      canonicalValue: presentIn === totalProducts ? 'consistent' : `${presentIn}/${totalProducts} products`,
+      productValues: JSON.stringify(productValues),
+      divergenceScore: divergence,
+      classification: 'unclassified',
+    });
+  }
+
+  // Compare patterns across products
+  const patterns = await db
+    .select()
+    .from(extractedPatterns)
+    .where(eq(extractedPatterns.auditId, auditId));
+
+  const patternsByKey = new Map<string, Map<string, number>>();
+  for (const pat of patterns) {
+    const key = `${pat.category}::${pat.name}`;
+    if (!patternsByKey.has(key)) {
+      patternsByKey.set(key, new Map());
+    }
+    const productMap = patternsByKey.get(key)!;
+    const current = productMap.get(pat.sourceProduct) ?? 0;
+    productMap.set(pat.sourceProduct, current + 1);
+  }
+
+  for (const [key, productFreqs] of Array.from(patternsByKey.entries())) {
+    const products = Array.from(productFreqs.keys());
+    const allProductUrls: string[] = JSON.parse(audit.productUrls);
+    if (audit.parentSystemUrl) allProductUrls.unshift(audit.parentSystemUrl);
+
+    const presentIn = products.length;
+    const totalProducts = allProductUrls.length;
+    const divergence = 1 - presentIn / totalProducts;
+
+    const productValues: Record<string, string> = {};
+    for (const product of allProductUrls) {
+      const freq = productFreqs.get(product);
+      productValues[product] = freq ? `present (${freq}x)` : 'absent';
+    }
+
+    await db.insert(comparisonResults).values({
+      id: generateId(),
+      auditId,
+      entityType: 'pattern',
+      entityProperty: `pattern::${key}`,
+      canonicalValue: presentIn === totalProducts ? 'consistent' : `${presentIn}/${totalProducts} products`,
+      productValues: JSON.stringify(productValues),
+      divergenceScore: divergence,
       classification: 'unclassified',
     });
   }

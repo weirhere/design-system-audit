@@ -63,8 +63,10 @@ export async function classifyAuditTokens(auditId: string): Promise<void> {
     .from(comparisonResults)
     .where(eq(comparisonResults.auditId, auditId));
 
-  // 2 & 3. For each comparison result, classify and update
+  // 2 & 3. For each token comparison result, classify and update
   for (const result of results) {
+    if (result.entityType !== 'token') continue; // components/patterns handled below
+
     const [layerStr, property] = result.entityProperty.split('::');
     const layer = layerStr as TokenLayer;
 
@@ -104,6 +106,31 @@ export async function classifyAuditTokens(auditId: string): Promise<void> {
         })
         .where(inArray(extractedTokens.id, tokenIdsToUpdate));
     }
+  }
+
+  // Classify component and pattern comparison results
+  const entityResults = await db
+    .select()
+    .from(comparisonResults)
+    .where(eq(comparisonResults.auditId, auditId));
+
+  for (const result of entityResults) {
+    if (result.entityType === 'token') continue; // already handled above
+
+    // For components/patterns, use simple thresholds on divergence
+    let entityClassification: Classification;
+    if (result.divergenceScore <= 0.0) {
+      entityClassification = 'inherit';
+    } else if (result.divergenceScore <= 0.5) {
+      entityClassification = 'adapt';
+    } else {
+      entityClassification = 'extend';
+    }
+
+    await db
+      .update(comparisonResults)
+      .set({ classification: entityClassification })
+      .where(eq(comparisonResults.id, result.id));
   }
 }
 

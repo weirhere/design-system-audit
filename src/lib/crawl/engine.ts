@@ -2,6 +2,8 @@ import { chromium, type Browser, type BrowserContext, type Page } from 'playwrig
 import { getDb } from '@/lib/db';
 import * as schema from '@/lib/db/schema';
 import { extractTokensFromPage } from './extractors/tokens';
+import { extractComponentsFromPage } from './extractors/components';
+import { extractPatternsFromPage } from './extractors/patterns';
 import { runComparison } from '@/lib/analysis/comparator';
 import { classifyAuditTokens } from '@/lib/analysis/classifier';
 import CrawlProgress from './progress';
@@ -58,6 +60,7 @@ export class CrawlEngine {
       urlsToCrawl.push(...productUrls);
 
       const totalUrls = urlsToCrawl.length;
+      const BATCH_SIZE = 100;
 
       // 5. Process each URL sequentially
       for (let i = 0; i < urlsToCrawl.length; i++) {
@@ -151,10 +154,54 @@ export class CrawlEngine {
             }));
 
             // Batch insert in chunks to avoid SQLite variable limits
-            const BATCH_SIZE = 100;
             for (let j = 0; j < tokenRecords.length; j += BATCH_SIZE) {
               const batch = tokenRecords.slice(j, j + BATCH_SIZE);
               await db.insert(schema.extractedTokens).values(batch);
+            }
+          }
+
+          // Run component extraction
+          const rawComponents = await extractComponentsFromPage(page, url);
+          if (rawComponents.length > 0) {
+            const componentRecords = rawComponents.map((comp) => ({
+              id: generateId(),
+              auditId: this.auditId,
+              sourceProduct: url,
+              name: comp.name,
+              selector: comp.selector,
+              variants: JSON.stringify(comp.variants),
+              states: JSON.stringify(comp.states),
+              tokenIds: JSON.stringify([]),
+              htmlSnapshot: comp.htmlSnapshot,
+              frequency: comp.frequency,
+              classification: 'unclassified' as const,
+              classificationConfidence: 0,
+              classificationOverridden: false,
+            }));
+            for (let j = 0; j < componentRecords.length; j += BATCH_SIZE) {
+              const batch = componentRecords.slice(j, j + BATCH_SIZE);
+              await db.insert(schema.extractedComponents).values(batch);
+            }
+          }
+
+          // Run pattern extraction
+          const rawPatterns = await extractPatternsFromPage(page, url);
+          if (rawPatterns.length > 0) {
+            const patternRecords = rawPatterns.map((pat) => ({
+              id: generateId(),
+              auditId: this.auditId,
+              sourceProduct: url,
+              category: pat.category,
+              name: pat.name,
+              componentIds: JSON.stringify(pat.componentSelectors),
+              responsiveBehavior: null,
+              classification: 'unclassified' as const,
+              classificationConfidence: 0,
+              classificationOverridden: false,
+            }));
+            for (let j = 0; j < patternRecords.length; j += BATCH_SIZE) {
+              const batch = patternRecords.slice(j, j + BATCH_SIZE);
+              await db.insert(schema.extractedPatterns).values(batch);
             }
           }
 

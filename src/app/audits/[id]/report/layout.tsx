@@ -8,10 +8,10 @@ const navItems = [
   { label: 'Overview', segment: '' },
   { label: 'Tokens', segment: '/tokens' },
   { label: 'Matrix', segment: '/matrix' },
-  { label: 'Components', segment: '/components', phase: 4 },
-  { label: 'Patterns', segment: '/patterns', phase: 4 },
-  { label: 'Roadmap', segment: '/roadmap', phase: 5 },
-  { label: 'Export', segment: '/export', phase: 5 },
+  { label: 'Components', segment: '/components' },
+  { label: 'Patterns', segment: '/patterns' },
+  { label: 'Roadmap', segment: '/roadmap' },
+  { label: 'Export', segment: '/export' },
 ];
 
 export default function ReportLayout({
@@ -46,11 +46,6 @@ export default function ReportLayout({
                   )}
                 >
                   {item.label}
-                  {item.phase && (
-                    <span className="ml-auto text-[10px] rounded-full bg-slate-100 px-1.5 py-0.5 text-slate-400 font-normal">
-                      P{item.phase}
-                    </span>
-                  )}
                 </Link>
               </li>
             );
