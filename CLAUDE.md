@@ -6,7 +6,7 @@ Design System Audit Tool - a Next.js web app that crawls websites, extracts desi
 ## Tech Stack
 - Next.js 14.2 (App Router), TypeScript, Tailwind CSS 3
 - Playwright-core for crawling + PDF generation
-- better-sqlite3 + Drizzle ORM (SQLite with WAL mode)
+- Supabase PostgreSQL via `postgres` (postgres.js) + Drizzle ORM
 - TanStack Table + TanStack Virtual, Recharts
 
 ## Important Config Gotchas
@@ -15,10 +15,13 @@ Design System Audit Tool - a Next.js web app that crawls websites, extracts desi
 - `autoprefixer` must be explicitly installed as a devDependency
 - `Buffer` can't be passed to `NextResponse` directly — use `new Uint8Array(buffer)`
 - TypeScript narrowing doesn't flow into `ReadableStream.start()` closures — assign to const first
+- `postgres` requires `{ prepare: false }` for Supabase Transaction Pooler (port 6543)
+- `getDb()` returns a noop drizzle instance when `DATABASE_URL` is unset (build-time safety)
+- Drizzle schemas use `pg-core` (`pgTable`, `boolean()`, `timestamp()`) — NOT `sqlite-core`
 
 ## Project Structure
 ```
-src/lib/db/        — Drizzle schema + singleton connection
+src/lib/db/        — Drizzle schema (pg-core) + postgres.js singleton connection
 src/lib/crawl/     — CrawlEngine, progress EventEmitter, extractors
 src/lib/analysis/  — Comparator, classifier, similarity (CIEDE2000), roadmap
 src/lib/export/    — JSON, CSV, HTML, PDF, Jira/Linear ticket generators
@@ -40,9 +43,15 @@ npm run build        # Production build
 npm run lint         # ESLint
 npm run db:generate  # Generate Drizzle migrations
 npm run db:migrate   # Run Drizzle migrations
-npm run db:push      # Push schema changes (dev)
+npm run db:push      # Push schema to Supabase (requires DATABASE_URL)
 npm run db:studio    # Open Drizzle Studio
 ```
+
+## Database
+- Hosted on **Supabase** (PostgreSQL) — `DATABASE_URL` env var required
+- Use the **Transaction Pooler** connection string (port 6543) for serverless compatibility
+- `npm run db:push` pushes schema changes — load `.env.local` first: `source .env.local && npm run db:push`
+- Auth tables use **singular** names (`user`, `account`, `session`, `verificationToken`) as required by `@auth/drizzle-adapter`
 
 ## Code Style
 - Follow existing patterns in the codebase
