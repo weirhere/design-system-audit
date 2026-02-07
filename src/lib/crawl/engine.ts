@@ -2,6 +2,8 @@ import { chromium, type Browser, type BrowserContext, type Page } from 'playwrig
 import { getDb } from '@/lib/db';
 import * as schema from '@/lib/db/schema';
 import { extractTokensFromPage } from './extractors/tokens';
+import { runComparison } from '@/lib/analysis/comparator';
+import { classifyAuditTokens } from '@/lib/analysis/classifier';
 import CrawlProgress from './progress';
 import { generateId } from '@/lib/utils';
 import { eq } from 'drizzle-orm';
@@ -218,15 +220,21 @@ export class CrawlEngine {
         }
       }
 
-      // 6. After all products: update audit status to 'crawled'
+      // 6. Run comparison + classification analysis
+      this.progress.emitProgress(1, 'Running cross-product comparison...', undefined, undefined);
+
       await db
         .update(schema.audits)
         .set({
-          status: 'crawled',
+          status: 'analyzing',
           updatedAt: new Date().toISOString(),
         })
         .where(eq(schema.audits.id, this.auditId));
 
+      await runComparison(this.auditId);
+      await classifyAuditTokens(this.auditId);
+
+      // runComparison sets status to 'complete'
       this.progress.emitComplete();
     } catch (error) {
       // 7. Top-level error: update audit status to 'error'

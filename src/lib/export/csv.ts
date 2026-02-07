@@ -18,11 +18,10 @@ function toCsvRow(values: (string | number | null | undefined)[]): string {
 export async function exportTokensCsv(auditId: string): Promise<string> {
   const db = getDb();
 
-  const tokens = db
+  const tokens = await db
     .select()
     .from(extractedTokens)
-    .where(eq(extractedTokens.auditId, auditId))
-    .all();
+    .where(eq(extractedTokens.auditId, auditId));
 
   const headers = [
     'ID', 'Source Product', 'Layer', 'Property', 'Computed Value',
@@ -44,11 +43,10 @@ export async function exportTokensCsv(auditId: string): Promise<string> {
 export async function exportComparisonCsv(auditId: string): Promise<string> {
   const db = getDb();
 
-  const comparisons = db
+  const comparisons = await db
     .select()
     .from(comparisonResults)
-    .where(eq(comparisonResults.auditId, auditId))
-    .all();
+    .where(eq(comparisonResults.auditId, auditId));
 
   // Collect all product URLs from comparison data
   const allProducts = new Set<string>();

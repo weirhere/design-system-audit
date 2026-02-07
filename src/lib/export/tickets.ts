@@ -21,11 +21,10 @@ const EFFORT_TO_POINTS: Record<string, number> = {
 
 export async function exportJiraTickets(auditId: string): Promise<string> {
   const db = getDb();
-  const tasks = db
+  const tasks = await db
     .select()
     .from(migrationTasks)
-    .where(eq(migrationTasks.auditId, auditId))
-    .all();
+    .where(eq(migrationTasks.auditId, auditId));
 
   const tickets: JiraTicket[] = tasks.map((t) => ({
     summary: t.title,
@@ -40,11 +39,10 @@ export async function exportJiraTickets(auditId: string): Promise<string> {
 
 export async function exportLinearTickets(auditId: string): Promise<string> {
   const db = getDb();
-  const tasks = db
+  const tasks = await db
     .select()
     .from(migrationTasks)
-    .where(eq(migrationTasks.auditId, auditId))
-    .all();
+    .where(eq(migrationTasks.auditId, auditId));
 
   const tickets = tasks.map((t) => ({
     title: t.title,
@@ -59,11 +57,10 @@ export async function exportLinearTickets(auditId: string): Promise<string> {
 
 export async function exportTicketsCsv(auditId: string): Promise<string> {
   const db = getDb();
-  const tasks = db
+  const tasks = await db
     .select()
     .from(migrationTasks)
-    .where(eq(migrationTasks.auditId, auditId))
-    .all();
+    .where(eq(migrationTasks.auditId, auditId));
 
   const headers = ['Title', 'Description', 'Classification', 'Effort', 'Priority', 'Phase', 'Entity Type', 'Source Product', 'Status'];
   const rows = tasks.map((t) => [

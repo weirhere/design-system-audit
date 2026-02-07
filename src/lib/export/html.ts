@@ -7,20 +7,18 @@ import type { TokenLayer } from '@/types/audit';
 export async function exportHtmlReport(auditId: string): Promise<string> {
   const db = getDb();
 
-  const audit = db.select().from(audits).where(eq(audits.id, auditId)).get();
+  const [audit] = await db.select().from(audits).where(eq(audits.id, auditId)).limit(1);
   if (!audit) throw new Error(`Audit ${auditId} not found`);
 
-  const tokens = db
+  const tokens = await db
     .select()
     .from(extractedTokens)
-    .where(eq(extractedTokens.auditId, auditId))
-    .all();
+    .where(eq(extractedTokens.auditId, auditId));
 
-  const comparisons = db
+  const comparisons = await db
     .select()
     .from(comparisonResults)
-    .where(eq(comparisonResults.auditId, auditId))
-    .all();
+    .where(eq(comparisonResults.auditId, auditId));
 
   const productUrls = JSON.parse(audit.productUrls) as string[];
 
