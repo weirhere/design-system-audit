@@ -30,6 +30,7 @@ export interface Audit {
   productUrls: string[];
   status: AuditStatus;
   config: AuditConfig;
+  userId?: string | null;
 }
 
 export interface CrawlJob {

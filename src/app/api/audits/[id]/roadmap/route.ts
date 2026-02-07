@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRoadmap, generateRoadmap } from '@/lib/analysis/roadmap';
+import { requireAuditOwner } from '@/lib/auth-helpers';
 
 export async function GET(
   _request: NextRequest,
@@ -7,6 +8,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const result = await requireAuditOwner(id);
+    if ('error' in result) return result.error;
 
     let tasks = await getRoadmap(id);
 

@@ -1,4 +1,7 @@
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { users } from './auth-schema';
+
+export { users, accounts, sessions, verificationTokens } from './auth-schema';
 
 export const audits = sqliteTable('audits', {
   id: text('id').primaryKey(),
@@ -11,6 +14,7 @@ export const audits = sqliteTable('audits', {
     enum: ['draft', 'crawling', 'crawled', 'analyzing', 'complete', 'error'],
   }).notNull().default('draft'),
   config: text('config').notNull(), // JSON
+  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
 });
 
 export const crawlJobs = sqliteTable('crawl_jobs', {
