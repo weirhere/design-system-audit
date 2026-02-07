@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
-import { audits } from '@/lib/db/schema';
 import { CrawlEngine } from '@/lib/crawl/engine';
 import { getCrawl, setCrawl } from '@/lib/crawl/registry';
-import { eq } from 'drizzle-orm';
+import { requireAuditOwner } from '@/lib/auth-helpers';
 
 export async function POST(
   _request: NextRequest,
@@ -11,18 +9,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const db = getDb();
-
-    const audit = await db.query.audits.findFirst({
-      where: eq(audits.id, id),
-    });
-
-    if (!audit) {
-      return NextResponse.json(
-        { error: 'Audit not found' },
-        { status: 404 }
-      );
-    }
+    const result = await requireAuditOwner(id);
+    if ('error' in result) return result.error;
+    const { audit } = result;
 
     if (!['draft', 'crawled', 'error', 'complete'].includes(audit.status)) {
       return NextResponse.json(
@@ -72,16 +61,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const ownerResult = await requireAuditOwner(id);
+  if ('error' in ownerResult) return ownerResult.error;
+
   const engine = getCrawl(id);
 
   if (!engine) {
-    // No active crawl -- return the current audit status as a final SSE event
-    const db = getDb();
-    const audit = await db.query.audits.findFirst({
-      where: eq(audits.id, id),
-    });
-
-    const status = audit?.status ?? 'unknown';
+    const status = ownerResult.audit?.status ?? 'unknown';
 
     const stream = new ReadableStream({
       start(controller) {

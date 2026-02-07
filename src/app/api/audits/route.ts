@@ -3,10 +3,15 @@ import { getDb } from '@/lib/db';
 import { audits } from '@/lib/db/schema';
 import { generateId } from '@/lib/utils';
 import { DEFAULT_AUDIT_CONFIG } from '@/lib/constants';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
+import { requireAuth } from '@/lib/auth-helpers';
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAuth();
+    if ('error' in authResult) return authResult.error;
+    const { userId } = authResult;
+
     let body: Record<string, unknown>;
     try {
       body = await request.json();
@@ -99,6 +104,7 @@ export async function POST(request: NextRequest) {
       productUrls: JSON.stringify(productUrls),
       status: 'draft' as const,
       config: JSON.stringify(DEFAULT_AUDIT_CONFIG),
+      userId,
     };
 
     await db.insert(audits).values(audit);
@@ -124,11 +130,16 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    const authResult = await requireAuth();
+    if ('error' in authResult) return authResult.error;
+    const { userId } = authResult;
+
     const db = getDb();
 
     const rows = await db
       .select()
       .from(audits)
+      .where(eq(audits.userId, userId))
       .orderBy(desc(audits.createdAt));
 
     const parsed = rows.map((row) => ({

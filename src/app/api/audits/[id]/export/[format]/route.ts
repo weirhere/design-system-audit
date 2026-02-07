@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuditOwner } from '@/lib/auth-helpers';
 
 export async function GET(
   _request: NextRequest,
@@ -6,6 +7,8 @@ export async function GET(
 ) {
   try {
     const { id, format } = await params;
+    const result = await requireAuditOwner(id);
+    if ('error' in result) return result.error;
 
     switch (format) {
       case 'json': {

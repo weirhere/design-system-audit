@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { overrideClassification } from '@/lib/analysis/classifier';
+import { requireAuditOwner } from '@/lib/auth-helpers';
 
 export async function PATCH(
   request: NextRequest,
@@ -7,6 +8,8 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+    const result = await requireAuditOwner(id);
+    if ('error' in result) return result.error;
 
     const body = await request.json();
     const { tokenIds, classification } = body as {

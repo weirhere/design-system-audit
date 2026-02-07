@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { audits } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { requireAuditOwner } from '@/lib/auth-helpers';
 
 export async function GET(
   _request: NextRequest,
@@ -9,23 +10,13 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const db = getDb();
-
-    const audit = await db.query.audits.findFirst({
-      where: eq(audits.id, id),
-    });
-
-    if (!audit) {
-      return NextResponse.json(
-        { error: 'Audit not found' },
-        { status: 404 }
-      );
-    }
+    const result = await requireAuditOwner(id);
+    if ('error' in result) return result.error;
 
     return NextResponse.json({
-      ...audit,
-      productUrls: JSON.parse(audit.productUrls),
-      config: JSON.parse(audit.config),
+      ...result.audit,
+      productUrls: JSON.parse(result.audit.productUrls),
+      config: JSON.parse(result.audit.config),
     });
   } catch (error) {
     console.error('[GET /api/audits/[id]] Error:', error);
@@ -42,8 +33,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const db = getDb();
+    const result = await requireAuditOwner(id);
+    if ('error' in result) return result.error;
 
+    const db = getDb();
     await db.delete(audits).where(eq(audits.id, id));
 
     return new NextResponse(null, { status: 204 });
