@@ -60,6 +60,7 @@ export function UrlInputList({ urls, onChange, label = 'Product URLs', max = MAX
             className="flex-1"
           />
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={() => removeUrl(i)}
@@ -73,7 +74,7 @@ export function UrlInputList({ urls, onChange, label = 'Product URLs', max = MAX
       ))}
       {error && <p className="text-xs text-red-500">{error}</p>}
       {urls.length < max && (
-        <Button variant="ghost" size="sm" onClick={addUrl} className="text-indigo-600">
+        <Button type="button" variant="ghost" size="sm" onClick={addUrl} className="text-indigo-600">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
