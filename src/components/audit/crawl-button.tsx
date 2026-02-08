@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 interface CrawlButtonProps {
   auditId: string;
   disabled?: boolean;
-  onStart?: () => void;
+  onStream?: (response: Response) => void;
   onError?: (message: string) => void;
 }
 
-export function CrawlButton({ auditId, disabled, onStart, onError }: CrawlButtonProps) {
+export function CrawlButton({ auditId, disabled, onStream, onError }: CrawlButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -23,7 +23,7 @@ export function CrawlButton({ auditId, disabled, onStart, onError }: CrawlButton
         onError?.(message);
         return;
       }
-      onStart?.();
+      onStream?.(res);
     } catch (e) {
       onError?.(e instanceof Error ? e.message : 'Failed to start crawl');
     } finally {

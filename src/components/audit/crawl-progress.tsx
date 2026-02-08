@@ -1,7 +1,5 @@
 'use client';
 
-import { useSSE, type SSEEvent } from '@/hooks/use-sse';
-import { useState, useCallback } from 'react';
 import { StatusBadge } from '@/components/ui/badge';
 
 interface CrawlJob {
@@ -12,56 +10,28 @@ interface CrawlJob {
   pageCount?: number;
 }
 
-interface CrawlProgressProps {
-  auditId: string;
-  isActive: boolean;
-  onComplete?: () => void;
+export interface CrawlState {
+  status: string;
+  progress: number;
+  message: string;
+  jobs: CrawlJob[];
 }
 
-export function CrawlProgress({ auditId, isActive, onComplete }: CrawlProgressProps) {
-  const [jobs, setJobs] = useState<CrawlJob[]>([]);
-  const [overallProgress, setOverallProgress] = useState(0);
-  const [status, setStatus] = useState<string>('idle');
-  const [message, setMessage] = useState<string>('');
+export const initialCrawlState: CrawlState = {
+  status: 'idle',
+  progress: 0,
+  message: '',
+  jobs: [],
+};
 
-  const handleEvent = useCallback((event: SSEEvent) => {
-    const data = event.data;
-    switch (event.type) {
-      case 'start':
-        setStatus('crawling');
-        setMessage(data.message as string || 'Starting crawl...');
-        break;
-      case 'progress':
-        setOverallProgress(data.progress as number || 0);
-        setMessage(data.message as string || '');
-        if (data.jobs) {
-          setJobs(data.jobs as CrawlJob[]);
-        }
-        break;
-      case 'job-complete':
-        setJobs((prev) => prev.map((j) =>
-          j.url === data.url ? { ...j, status: 'complete', progress: 1 } : j
-        ));
-        break;
-      case 'error':
-        setStatus('error');
-        setMessage(data.message as string || 'Crawl failed');
-        break;
-      case 'complete':
-        setStatus('complete');
-        setMessage('Crawl complete');
-        setOverallProgress(1);
-        onComplete?.();
-        break;
-    }
-  }, [onComplete]);
+interface CrawlProgressProps {
+  state: CrawlState;
+}
 
-  useSSE({
-    url: isActive ? `/api/audits/${auditId}/crawl` : null,
-    onEvent: handleEvent,
-  });
+export function CrawlProgress({ state }: CrawlProgressProps) {
+  const { status, progress, message, jobs } = state;
 
-  if (status === 'idle' && !isActive) return null;
+  if (status === 'idle') return null;
 
   return (
     <div className="space-y-4">
@@ -71,7 +41,7 @@ export function CrawlProgress({ auditId, isActive, onComplete }: CrawlProgressPr
           <span className="text-sm text-slate-600">{message}</span>
         </div>
         <span className="text-sm font-medium text-slate-700">
-          {Math.round(overallProgress * 100)}%
+          {Math.round(progress * 100)}%
         </span>
       </div>
 
@@ -79,7 +49,7 @@ export function CrawlProgress({ auditId, isActive, onComplete }: CrawlProgressPr
       <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
         <div
           className="h-full rounded-full bg-indigo-600 transition-all duration-500"
-          style={{ width: `${overallProgress * 100}%` }}
+          style={{ width: `${progress * 100}%` }}
         />
       </div>
 

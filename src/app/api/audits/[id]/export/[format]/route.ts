@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuditOwner } from '@/lib/auth-helpers';
 
+export const maxDuration = 60;
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; format: string }> }

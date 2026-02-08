@@ -1,13 +1,10 @@
-import { chromium } from 'playwright-core';
+import { connectBrowser } from '@/lib/browser';
 import { exportHtmlReport } from './html';
 
 export async function exportPdfReport(auditId: string): Promise<Buffer> {
   const html = await exportHtmlReport(auditId);
 
-  const browser = await chromium.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  const browser = await connectBrowser();
 
   try {
     const context = await browser.newContext();
