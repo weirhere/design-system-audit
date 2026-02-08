@@ -1,24 +1,65 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useAudit } from '@/hooks/use-audit';
 import { CrawlButton } from '@/components/audit/crawl-button';
-import { CrawlProgress } from '@/components/audit/crawl-progress';
+import { CrawlProgress, initialCrawlState, type CrawlState } from '@/components/audit/crawl-progress';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { LAYER_LABELS } from '@/lib/constants';
 import type { TokenLayer } from '@/types/audit';
 import type { TokenSummary } from '@/types/token';
 
+function readCrawlStream(
+  response: Response,
+  onEvent: (event: { type: string; data: Record<string, unknown> }) => void
+) {
+  const body = response.body;
+  if (!body) return;
+
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  async function read() {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data: ')) continue;
+          try {
+            onEvent(JSON.parse(trimmed.slice(6)));
+          } catch {
+            // skip malformed JSON
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[readCrawlStream] error:', err);
+    }
+  }
+
+  read();
+}
+
 export default function AuditPage() {
   const { id } = useParams<{ id: string }>();
   const { audit, loading, refetch } = useAudit(id ?? null);
-  const [crawling, setCrawling] = useState(false);
+  const [crawl, setCrawl] = useState<CrawlState>(initialCrawlState);
   const [error, setError] = useState<string | null>(null);
   const [summaries, setSummaries] = useState<TokenSummary[]>([]);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
 
-  const isCrawling = crawling || audit?.status === 'crawling';
+  const isCrawling = crawl.status === 'crawling' || audit?.status === 'crawling';
 
   useEffect(() => {
     if (
@@ -65,19 +106,61 @@ export default function AuditPage() {
     }
   };
 
-  const handleCrawlStart = () => {
+  const handleEvent = useCallback((event: { type: string; data: Record<string, unknown> }) => {
+    const data = event.data;
+    switch (event.type) {
+      case 'start':
+        setCrawl(prev => ({
+          ...prev,
+          status: 'crawling',
+          message: (data.message as string) || 'Starting crawl...',
+        }));
+        break;
+      case 'progress':
+        setCrawl(prev => ({
+          ...prev,
+          progress: (data.progress as number) || 0,
+          message: (data.message as string) || '',
+          jobs: data.jobs ? (data.jobs as CrawlState['jobs']) : prev.jobs,
+        }));
+        break;
+      case 'job-complete':
+        setCrawl(prev => ({
+          ...prev,
+          jobs: prev.jobs.map(j =>
+            j.url === data.url ? { ...j, status: 'complete', progress: 1 } : j
+          ),
+        }));
+        break;
+      case 'error':
+        setCrawl(prev => ({
+          ...prev,
+          status: 'error',
+          message: (data.message as string) || 'Crawl failed',
+        }));
+        break;
+      case 'complete':
+        setCrawl({
+          status: 'complete',
+          message: 'Crawl complete',
+          progress: 1,
+          jobs: [],
+        });
+        refetchRef.current();
+        fetchSummaries();
+        setTimeout(() => setCrawl(initialCrawlState), 2000);
+        break;
+    }
+  }, []);
+
+  const handleStream = (response: Response) => {
     setError(null);
-    setCrawling(true);
+    setCrawl({ ...initialCrawlState, status: 'crawling', message: 'Connecting...' });
+    readCrawlStream(response, handleEvent);
   };
 
   const handleCrawlError = (message: string) => {
     setError(message);
-  };
-
-  const handleCrawlComplete = () => {
-    setCrawling(false);
-    refetch();
-    fetchSummaries();
   };
 
   if (loading) {
@@ -102,7 +185,7 @@ export default function AuditPage() {
         <CrawlButton
           auditId={audit.id}
           disabled={isCrawling}
-          onStart={handleCrawlStart}
+          onStream={handleStream}
           onError={handleCrawlError}
         />
       </div>
@@ -113,17 +196,13 @@ export default function AuditPage() {
         </div>
       )}
 
-      {isCrawling && (
+      {(isCrawling || crawl.status !== 'idle') && (
         <Card>
           <CardHeader>
             <CardTitle>Crawl Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <CrawlProgress
-              auditId={audit.id}
-              isActive={isCrawling}
-              onComplete={handleCrawlComplete}
-            />
+            <CrawlProgress state={crawl} />
           </CardContent>
         </Card>
       )}

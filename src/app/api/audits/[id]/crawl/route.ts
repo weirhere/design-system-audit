@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CrawlEngine } from '@/lib/crawl/engine';
-import { getCrawl, setCrawl } from '@/lib/crawl/registry';
 import { requireAuditOwner } from '@/lib/auth-helpers';
+
+export const maxDuration = 300;
 
 export async function POST(
   _request: NextRequest,
@@ -20,13 +21,6 @@ export async function POST(
       );
     }
 
-    if (getCrawl(id)) {
-      return NextResponse.json(
-        { error: 'A crawl is already running for this audit.' },
-        { status: 409 }
-      );
-    }
-
     const productUrls: string[] = JSON.parse(audit.productUrls);
     if (productUrls.length === 0) {
       return NextResponse.json(
@@ -36,15 +30,69 @@ export async function POST(
     }
 
     const engine = new CrawlEngine(id);
-    setCrawl(id, engine);
+    const encoder = new TextEncoder();
 
-    // Fire-and-forget: start the crawl without awaiting
-    engine.start();
+    const stream = new ReadableStream({
+      start(controller) {
+        let closed = false;
 
-    return NextResponse.json(
-      { status: 'started' },
-      { status: 202 }
-    );
+        function send(type: string, data: unknown) {
+          if (closed) return;
+          const payload = JSON.stringify({ type, data });
+          controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+        }
+
+        function closeStream() {
+          if (closed) return;
+          closed = true;
+          cleanup();
+          controller.close();
+        }
+
+        const onStart = (payload: unknown) => send('start', payload);
+        const onProgress = (payload: unknown) => send('progress', payload);
+        const onJobComplete = (payload: unknown) => send('job-complete', payload);
+
+        const onError = (payload: unknown) => {
+          send('error', payload);
+          closeStream();
+        };
+
+        const onComplete = (payload: unknown) => {
+          send('complete', payload);
+          closeStream();
+        };
+
+        function cleanup() {
+          engine.progress.removeListener('start', onStart);
+          engine.progress.removeListener('progress', onProgress);
+          engine.progress.removeListener('job-complete', onJobComplete);
+          engine.progress.removeListener('error', onError);
+          engine.progress.removeListener('complete', onComplete);
+        }
+
+        engine.progress.on('start', onStart);
+        engine.progress.on('progress', onProgress);
+        engine.progress.on('job-complete', onJobComplete);
+        engine.progress.on('error', onError);
+        engine.progress.on('complete', onComplete);
+
+        // Start the crawl within this streaming response
+        engine.start().catch((err) => {
+          const message = err instanceof Error ? err.message : String(err);
+          send('error', { message });
+          closeStream();
+        });
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
   } catch (error) {
     console.error('[POST /api/audits/[id]/crawl] Error:', error);
     const message =
@@ -64,78 +112,6 @@ export async function GET(
   const ownerResult = await requireAuditOwner(id);
   if ('error' in ownerResult) return ownerResult.error;
 
-  const engine = getCrawl(id);
-
-  if (!engine) {
-    const status = ownerResult.audit?.status ?? 'unknown';
-
-    const stream = new ReadableStream({
-      start(controller) {
-        const data = JSON.stringify({ type: 'status', data: { status } });
-        controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
-        controller.close();
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
-  }
-
-  // Active crawl -- stream progress events via SSE
-  const activeEngine = engine;
-  const stream = new ReadableStream({
-    start(controller) {
-      const encoder = new TextEncoder();
-
-      function send(type: string, data: unknown) {
-        const payload = JSON.stringify({ type, data });
-        controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
-      }
-
-      const onProgress = (payload: unknown) => {
-        send('progress', payload);
-      };
-
-      const onJobComplete = (payload: unknown) => {
-        send('job-complete', payload);
-      };
-
-      const onError = (payload: unknown) => {
-        send('error', payload);
-        cleanup();
-        controller.close();
-      };
-
-      const onComplete = (payload: unknown) => {
-        send('complete', payload);
-        cleanup();
-        controller.close();
-      };
-
-      function cleanup() {
-        activeEngine.progress.removeListener('progress', onProgress);
-        activeEngine.progress.removeListener('job-complete', onJobComplete);
-        activeEngine.progress.removeListener('error', onError);
-        activeEngine.progress.removeListener('complete', onComplete);
-      }
-
-      activeEngine.progress.on('progress', onProgress);
-      activeEngine.progress.on('job-complete', onJobComplete);
-      activeEngine.progress.on('error', onError);
-      activeEngine.progress.on('complete', onComplete);
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  });
+  const status = ownerResult.audit?.status ?? 'unknown';
+  return NextResponse.json({ status });
 }

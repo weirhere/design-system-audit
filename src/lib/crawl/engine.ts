@@ -1,4 +1,5 @@
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright-core';
+import { type Browser, type BrowserContext, type Page } from 'playwright-core';
+import { connectBrowser } from '@/lib/browser';
 import { getDb } from '@/lib/db';
 import * as schema from '@/lib/db/schema';
 import { extractTokensFromPage } from './extractors/tokens';
@@ -35,11 +36,8 @@ export class CrawlEngine {
 
       const productUrls: string[] = JSON.parse(audit.productUrls);
 
-      // 2. Launch browser
-      this.browser = await chromium.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
+      // 2. Launch/connect browser
+      this.browser = await connectBrowser();
 
       // 3. Update audit status to 'crawling'
       await db
