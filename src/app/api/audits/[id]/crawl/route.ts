@@ -42,6 +42,9 @@ export async function POST(
           controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
         }
 
+        // Send initial event immediately to flush Vercel's response buffer
+        send('start', { message: 'Connecting to browser...', progress: 0 });
+
         function closeStream() {
           if (closed) return;
           closed = true;
@@ -89,8 +92,9 @@ export async function POST(
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-transform',
         Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
       },
     });
   } catch (error) {
