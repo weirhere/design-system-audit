@@ -31,6 +31,8 @@ export interface Audit {
   status: AuditStatus;
   config: AuditConfig;
   userId?: string | null;
+  shareToken?: string | null;
+  isPublic?: boolean;
 }
 
 export interface CrawlJob {

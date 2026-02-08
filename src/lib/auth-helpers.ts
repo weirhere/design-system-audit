@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getDb } from '@/lib/db';
 import { audits } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 type AuthError = { error: NextResponse };
 type AuthSuccess = { userId: string };
 type AuditOwnerSuccess = { userId: string; audit: typeof audits.$inferSelect };
+type AuditAccessSuccess = { audit: typeof audits.$inferSelect };
 
 export async function requireAuth(): Promise<AuthError | AuthSuccess> {
   const supabase = createClient();
@@ -39,4 +40,26 @@ export async function requireAuditOwner(auditId: string): Promise<AuthError | Au
   }
 
   return { userId: authResult.userId, audit };
+}
+
+export async function requireAuditAccess(
+  auditId: string,
+  shareToken?: string | null
+): Promise<AuthError | AuditAccessSuccess> {
+  if (shareToken) {
+    const db = getDb();
+    const audit = await db.query.audits.findFirst({
+      where: and(eq(audits.id, auditId), eq(audits.shareToken, shareToken), eq(audits.isPublic, true)),
+    });
+
+    if (!audit) {
+      return { error: NextResponse.json({ error: 'Audit not found' }, { status: 404 }) };
+    }
+
+    return { audit };
+  }
+
+  const result = await requireAuditOwner(auditId);
+  if ('error' in result) return result;
+  return { audit: result.audit };
 }

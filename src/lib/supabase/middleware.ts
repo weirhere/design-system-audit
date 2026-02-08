@@ -34,10 +34,12 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Allow static assets and auth callback
+  // Allow static assets, auth callback, and shared reports
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/share/') ||
+    pathname.startsWith('/api/share/') ||
     pathname.includes('.')
   ) {
     return supabaseResponse;
