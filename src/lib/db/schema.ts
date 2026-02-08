@@ -12,6 +12,8 @@ export const audits = pgTable('audits', {
   }).notNull().default('draft'),
   config: text('config').notNull(), // JSON
   userId: text('user_id'),
+  shareToken: text('share_token').unique(),
+  isPublic: boolean('is_public').notNull().default(false),
 });
 
 export const crawlJobs = pgTable('crawl_jobs', {

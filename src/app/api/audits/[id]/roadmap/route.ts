@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRoadmap, generateRoadmap } from '@/lib/analysis/roadmap';
-import { requireAuditOwner } from '@/lib/auth-helpers';
+import { requireAuditAccess } from '@/lib/auth-helpers';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const result = await requireAuditOwner(id);
+    const shareToken = request.nextUrl.searchParams.get('shareToken');
+    const result = await requireAuditAccess(id, shareToken);
     if ('error' in result) return result.error;
 
     let tasks = await getRoadmap(id);
