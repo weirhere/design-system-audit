@@ -7,6 +7,7 @@ Design System Audit Tool - a Next.js web app that crawls websites, extracts desi
 - Next.js 14.2 (App Router), TypeScript, Tailwind CSS 3
 - Playwright-core for crawling + PDF generation
 - Supabase PostgreSQL via `postgres` (postgres.js) + Drizzle ORM
+- Supabase Auth (`@supabase/supabase-js` + `@supabase/ssr`) with GitHub OAuth
 - TanStack Table + TanStack Virtual, Recharts
 
 ## Important Config Gotchas
@@ -22,6 +23,7 @@ Design System Audit Tool - a Next.js web app that crawls websites, extracts desi
 ## Project Structure
 ```
 src/lib/db/        — Drizzle schema (pg-core) + postgres.js singleton connection
+src/lib/supabase/  — Supabase client utilities (server, client, middleware)
 src/lib/crawl/     — CrawlEngine, progress EventEmitter, extractors
 src/lib/analysis/  — Comparator, classifier, similarity (CIEDE2000), roadmap
 src/lib/export/    — JSON, CSV, HTML, PDF, Jira/Linear ticket generators
@@ -51,7 +53,8 @@ npm run db:studio    # Open Drizzle Studio
 - Hosted on **Supabase** (PostgreSQL) — `DATABASE_URL` env var required
 - Use the **Transaction Pooler** connection string (port 6543) for serverless compatibility
 - `npm run db:push` pushes schema changes — load `.env.local` first: `source .env.local && npm run db:push`
-- Auth tables use **singular** names (`user`, `account`, `session`, `verificationToken`) as required by `@auth/drizzle-adapter`
+- Auth is managed by Supabase Auth (no custom auth tables in Drizzle schema)
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` env vars required for auth
 
 ## Code Style
 - Follow existing patterns in the codebase

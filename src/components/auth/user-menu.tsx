@@ -1,12 +1,30 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import type { User } from '@supabase/supabase-js';
 
 export default function UserMenu() {
-  const { data: session } = useSession();
+  const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -18,9 +36,16 @@ export default function UserMenu() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (!session?.user) return null;
+  if (!user) return null;
 
-  const { name, email, image } = session.user;
+  const name = user.user_metadata?.full_name || user.user_metadata?.name || null;
+  const email = user.email || null;
+  const image = user.user_metadata?.avatar_url || null;
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   return (
     <div className="relative" ref={menuRef}>
@@ -52,7 +77,7 @@ export default function UserMenu() {
             )}
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={handleSignOut}
             className="w-full px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
           >
             Sign out

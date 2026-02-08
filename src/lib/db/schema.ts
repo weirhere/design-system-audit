@@ -1,7 +1,4 @@
 import { pgTable, text, integer, real, boolean } from 'drizzle-orm/pg-core';
-import { users } from './auth-schema';
-
-export { users, accounts, sessions, verificationTokens } from './auth-schema';
 
 export const audits = pgTable('audits', {
   id: text('id').primaryKey(),
@@ -14,7 +11,7 @@ export const audits = pgTable('audits', {
     enum: ['draft', 'crawling', 'crawled', 'analyzing', 'complete', 'error'],
   }).notNull().default('draft'),
   config: text('config').notNull(), // JSON
-  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id'),
 });
 
 export const crawlJobs = pgTable('crawl_jobs', {
