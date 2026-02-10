@@ -91,7 +91,6 @@ export default function NewAuditPage() {
               </label>
               <Input
                 id="parentSystemUrl"
-                type="url"
                 value={parentSystemUrl}
                 onChange={(e) => setParentSystemUrl(e.target.value)}
                 placeholder="https://design-system.example.com"

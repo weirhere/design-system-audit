@@ -10,6 +10,11 @@ type AuditOwnerSuccess = { userId: string; audit: typeof audits.$inferSelect };
 type AuditAccessSuccess = { audit: typeof audits.$inferSelect };
 
 export async function requireAuth(): Promise<AuthError | AuthSuccess> {
+  // DEV BYPASS: skip auth on localhost
+  if (process.env.NODE_ENV === 'development' && process.env.DEV_BYPASS_AUTH === 'true') {
+    return { userId: 'dev-user' };
+  }
+
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

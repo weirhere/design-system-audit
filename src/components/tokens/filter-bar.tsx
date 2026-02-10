@@ -2,7 +2,7 @@
 
 import { Select } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { TOKEN_LAYERS, LAYER_LABELS } from '@/lib/constants';
+import { TOKEN_LAYERS, LAYER_LABELS, CLASSIFICATION_LABELS } from '@/lib/constants';
 import type { TokenLayer } from '@/types/audit';
 import type { Classification } from '@/types/classification';
 
@@ -48,10 +48,10 @@ export function FilterBar({
         className="w-40"
       >
         <option value="">All classifications</option>
-        <option value="inherit">Inherit</option>
-        <option value="adapt">Adapt</option>
-        <option value="extend">Extend</option>
-        <option value="unclassified">Unclassified</option>
+        <option value="inherit">{CLASSIFICATION_LABELS.inherit}</option>
+        <option value="adapt">{CLASSIFICATION_LABELS.adapt}</option>
+        <option value="extend">{CLASSIFICATION_LABELS.extend}</option>
+        <option value="unclassified">{CLASSIFICATION_LABELS.unclassified}</option>
       </Select>
 
       {products && products.length > 0 && onProductChange && (
@@ -62,7 +62,7 @@ export function FilterBar({
         >
           <option value="">All products</option>
           {products.map((p) => (
-            <option key={p} value={p}>{new URL(p).hostname}</option>
+            <option key={p} value={p}>{(() => { try { return new URL(p).hostname; } catch { return p; } })()}</option>
           ))}
         </Select>
       )}

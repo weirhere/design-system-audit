@@ -52,10 +52,13 @@ export class CrawlEngine {
 
       // 4. If parentSystemUrl exists, add it to the front of the crawl list
       const urlsToCrawl: string[] = [];
+      const ensureProtocol = (u: string) =>
+        /^https?:\/\//i.test(u) ? u : `https://${u}`;
+
       if (audit.parentSystemUrl) {
-        urlsToCrawl.push(audit.parentSystemUrl);
+        urlsToCrawl.push(ensureProtocol(audit.parentSystemUrl));
       }
-      urlsToCrawl.push(...productUrls);
+      urlsToCrawl.push(...productUrls.map(ensureProtocol));
 
       const totalUrls = urlsToCrawl.length;
       const BATCH_SIZE = 100;

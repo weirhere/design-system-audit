@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useSharedAudit } from '@/hooks/use-shared-audit';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { CLASSIFICATION_COLORS, LAYER_LABELS, TOKEN_LAYERS } from '@/lib/constants';
+import { CLASSIFICATION_COLORS, CLASSIFICATION_LABELS, CLASSIFICATION_DESCRIPTIONS, LAYER_LABELS, TOKEN_LAYERS } from '@/lib/constants';
 import type { ExtractedToken } from '@/types/token';
 import type { TokenLayer } from '@/types/audit';
 import {
@@ -71,9 +71,9 @@ export default function SharedOverviewPage() {
 
   const pieData = useMemo(() => {
     return [
-      { name: 'Inherit', value: stats.inherit, color: CLASSIFICATION_COLORS.inherit },
-      { name: 'Adapt', value: stats.adapt, color: CLASSIFICATION_COLORS.adapt },
-      { name: 'Extend', value: stats.extend, color: CLASSIFICATION_COLORS.extend },
+      { name: CLASSIFICATION_LABELS.inherit, value: stats.inherit, color: CLASSIFICATION_COLORS.inherit },
+      { name: CLASSIFICATION_LABELS.adapt, value: stats.adapt, color: CLASSIFICATION_COLORS.adapt },
+      { name: CLASSIFICATION_LABELS.extend, value: stats.extend, color: CLASSIFICATION_COLORS.extend },
       { name: 'Unclassified', value: stats.unclassified, color: CLASSIFICATION_COLORS.unclassified },
     ].filter((d) => d.value > 0);
   }, [stats]);
@@ -121,25 +121,25 @@ export default function SharedOverviewPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-4">
+          <CardContent className="py-4" title={CLASSIFICATION_DESCRIPTIONS.inherit}>
             <p className="text-xs font-medium text-emerald-600 uppercase tracking-wider">
-              Inherit
+              {CLASSIFICATION_LABELS.inherit}
             </p>
             <p className="mt-1 text-2xl font-bold text-emerald-600">{stats.inherit}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-4">
+          <CardContent className="py-4" title={CLASSIFICATION_DESCRIPTIONS.adapt}>
             <p className="text-xs font-medium text-amber-600 uppercase tracking-wider">
-              Adapt
+              {CLASSIFICATION_LABELS.adapt}
             </p>
             <p className="mt-1 text-2xl font-bold text-amber-600">{stats.adapt}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-4">
+          <CardContent className="py-4" title={CLASSIFICATION_DESCRIPTIONS.extend}>
             <p className="text-xs font-medium text-red-600 uppercase tracking-wider">
-              Extend
+              {CLASSIFICATION_LABELS.extend}
             </p>
             <p className="mt-1 text-2xl font-bold text-red-600">{stats.extend}</p>
           </CardContent>

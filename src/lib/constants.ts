@@ -33,9 +33,16 @@ export const LAYER_LABELS: Record<TokenLayer, string> = {
 
 export const CLASSIFICATION_LABELS: Record<string, string> = {
   unclassified: 'Unclassified',
-  inherit: 'Inherit',
-  adapt: 'Adapt',
-  extend: 'Extend',
+  inherit: 'Match',
+  adapt: 'Modified',
+  extend: 'Custom',
+};
+
+export const CLASSIFICATION_DESCRIPTIONS: Record<string, string> = {
+  unclassified: 'Not yet classified against the design system',
+  inherit: 'Exact or near-exact match to the design system',
+  adapt: 'Similar to a design system token but has been altered',
+  extend: 'Not found in the design system — completely custom',
 };
 
 export const CLASSIFICATION_COLORS: Record<string, string> = {

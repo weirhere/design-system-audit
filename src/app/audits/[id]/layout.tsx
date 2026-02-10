@@ -16,9 +16,11 @@ export default async function AuditDetailLayout({
   ];
 
   return (
-    <div className="space-y-6">
-      <Tabs tabs={tabs} />
-      {children}
+    <div>
+      <div className="sticky top-14 z-40 -mx-6 -mt-8 border-b border-slate-200 bg-white px-6">
+        <Tabs tabs={tabs} className="border-b-0" />
+      </div>
+      <div className="pt-6">{children}</div>
     </div>
   );
 }

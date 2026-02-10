@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MAX_PRODUCT_URLS } from '@/lib/constants';
@@ -13,8 +12,6 @@ interface UrlInputListProps {
 }
 
 export function UrlInputList({ urls, onChange, label = 'Product URLs', max = MAX_PRODUCT_URLS }: UrlInputListProps) {
-  const [error, setError] = useState<string | null>(null);
-
   const addUrl = () => {
     if (urls.length >= max) return;
     onChange([...urls, '']);
@@ -25,25 +22,9 @@ export function UrlInputList({ urls, onChange, label = 'Product URLs', max = MAX
   };
 
   const updateUrl = (index: number, value: string) => {
-    setError(null);
     const updated = [...urls];
     updated[index] = value;
     onChange(updated);
-  };
-
-  const validateUrl = (url: string): boolean => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const handleBlur = (url: string) => {
-    if (url && !validateUrl(url)) {
-      setError('Please enter a valid URL (e.g., https://example.com)');
-    }
   };
 
   return (
@@ -52,10 +33,8 @@ export function UrlInputList({ urls, onChange, label = 'Product URLs', max = MAX
       {urls.map((url, i) => (
         <div key={i} className="flex gap-2">
           <Input
-            type="url"
             value={url}
             onChange={(e) => updateUrl(i, e.target.value)}
-            onBlur={() => handleBlur(url)}
             placeholder="https://app.example.com"
             className="flex-1"
           />
@@ -72,7 +51,6 @@ export function UrlInputList({ urls, onChange, label = 'Product URLs', max = MAX
           </Button>
         </div>
       ))}
-      {error && <p className="text-xs text-red-500">{error}</p>}
       {urls.length < max && (
         <Button type="button" variant="ghost" size="sm" onClick={addUrl} className="text-indigo-600">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

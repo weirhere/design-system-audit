@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { CLASSIFICATION_LABELS, CLASSIFICATION_DESCRIPTIONS } from '@/lib/constants';
 import type { Classification } from '@/types/classification';
 
 const classificationStyles: Record<Classification, string> = {
@@ -16,13 +17,14 @@ interface BadgeProps {
 export function ClassificationBadge({ classification, className }: BadgeProps) {
   return (
     <span
+      title={CLASSIFICATION_DESCRIPTIONS[classification]}
       className={cn(
-        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize',
+        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
         classificationStyles[classification],
         className
       )}
     >
-      {classification}
+      {CLASSIFICATION_LABELS[classification] || classification}
     </span>
   );
 }

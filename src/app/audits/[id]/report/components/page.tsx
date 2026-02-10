@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ClassificationBadge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import { CLASSIFICATION_LABELS } from '@/lib/constants';
 
 interface Component {
   id: string;
@@ -102,10 +103,10 @@ export default function ComponentsPage() {
           className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="all">All Classifications</option>
-          <option value="inherit">Inherit</option>
-          <option value="adapt">Adapt</option>
-          <option value="extend">Extend</option>
-          <option value="unclassified">Unclassified</option>
+          <option value="inherit">{CLASSIFICATION_LABELS.inherit}</option>
+          <option value="adapt">{CLASSIFICATION_LABELS.adapt}</option>
+          <option value="extend">{CLASSIFICATION_LABELS.extend}</option>
+          <option value="unclassified">{CLASSIFICATION_LABELS.unclassified}</option>
         </select>
       </div>
 
@@ -160,14 +161,25 @@ export default function ComponentsPage() {
                 </table>
               </div>
               {items[0]?.htmlSnapshot && (
-                <details className="mt-3">
-                  <summary className="cursor-pointer text-xs text-slate-400 hover:text-slate-600">
-                    View HTML snapshot
-                  </summary>
-                  <pre className="mt-2 max-h-40 overflow-auto rounded bg-slate-50 p-3 text-xs text-slate-600">
-                    {items[0].htmlSnapshot}
-                  </pre>
-                </details>
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs font-medium text-slate-500">Preview</p>
+                  <div className="rounded-md border border-slate-200 bg-white overflow-hidden">
+                    <iframe
+                      srcDoc={`<!DOCTYPE html><html><head><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:12px;font-size:14px;color:#334155;overflow:hidden}a{color:inherit;text-decoration:none;pointer-events:none}img{max-width:100%;height:auto}</style></head><body>${items[0].htmlSnapshot}</body></html>`}
+                      sandbox=""
+                      title={`Preview of ${name}`}
+                      className="w-full h-[120px] pointer-events-none"
+                    />
+                  </div>
+                  <details>
+                    <summary className="cursor-pointer text-xs text-slate-400 hover:text-slate-600">
+                      View HTML source
+                    </summary>
+                    <pre className="mt-2 max-h-40 overflow-auto rounded bg-slate-50 p-3 text-xs text-slate-600">
+                      {items[0].htmlSnapshot}
+                    </pre>
+                  </details>
+                </div>
               )}
             </CardContent>
           </Card>
