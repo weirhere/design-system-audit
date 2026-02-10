@@ -6,7 +6,7 @@ import { useAudit } from '@/hooks/use-audit';
 import { CrawlButton } from '@/components/audit/crawl-button';
 import { CrawlProgress, initialCrawlState, type CrawlState } from '@/components/audit/crawl-progress';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { LAYER_LABELS } from '@/lib/constants';
+import { LAYER_LABELS, CLASSIFICATION_LABELS } from '@/lib/constants';
 import type { TokenLayer } from '@/types/audit';
 import type { TokenSummary } from '@/types/token';
 
@@ -224,16 +224,16 @@ export default function AuditPage() {
                       Total
                     </th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-emerald-600 uppercase bg-slate-50 border-b border-slate-200">
-                      Inherit
+                      {CLASSIFICATION_LABELS.inherit}
                     </th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-amber-600 uppercase bg-slate-50 border-b border-slate-200">
-                      Adapt
+                      {CLASSIFICATION_LABELS.adapt}
                     </th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-red-600 uppercase bg-slate-50 border-b border-slate-200">
-                      Extend
+                      {CLASSIFICATION_LABELS.extend}
                     </th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-slate-400 uppercase bg-slate-50 border-b border-slate-200">
-                      Unclassified
+                      {CLASSIFICATION_LABELS.unclassified}
                     </th>
                   </tr>
                 </thead>

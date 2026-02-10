@@ -51,44 +51,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate each URL
-    const invalidUrls: string[] = [];
-    for (const url of productUrls) {
-      try {
-        const parsed = new URL(url);
-        if (!['http:', 'https:'].includes(parsed.protocol)) {
-          invalidUrls.push(url);
-        }
-      } catch {
-        invalidUrls.push(url);
-      }
-    }
-
+    // Validate each URL is a non-empty string
+    const invalidUrls = productUrls.filter((url: string) => typeof url !== 'string' || !url.trim());
     if (invalidUrls.length > 0) {
       return NextResponse.json(
-        {
-          error: `Invalid URL${invalidUrls.length > 1 ? 's' : ''}: ${invalidUrls.join(', ')}. URLs must start with http:// or https://.`,
-        },
+        { error: 'Product URLs must be non-empty strings.' },
         { status: 400 }
       );
-    }
-
-    // Validate parent URL if provided
-    if (parentSystemUrl && typeof parentSystemUrl === 'string' && parentSystemUrl.trim()) {
-      try {
-        const parsed = new URL(parentSystemUrl);
-        if (!['http:', 'https:'].includes(parsed.protocol)) {
-          return NextResponse.json(
-            { error: 'Parent design system URL must start with http:// or https://.' },
-            { status: 400 }
-          );
-        }
-      } catch {
-        return NextResponse.json(
-          { error: `Invalid parent design system URL: ${parentSystemUrl}` },
-          { status: 400 }
-        );
-      }
     }
 
     const db = getDb();

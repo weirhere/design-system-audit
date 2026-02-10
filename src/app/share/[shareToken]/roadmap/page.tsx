@@ -24,9 +24,9 @@ import {
 type ViewMode = 'timeline' | 'kanban';
 
 const PHASE_LABELS: Record<number, string> = {
-  1: 'Phase 1: Inherit — Direct Adoption',
-  2: 'Phase 2: Adapt — Contextual Modifiers',
-  3: 'Phase 3: Extend — New Tokens',
+  1: 'Phase 1: Match — Direct Adoption',
+  2: 'Phase 2: Modified — Contextual Adjustments',
+  3: 'Phase 3: Custom — New Tokens',
 };
 
 const PHASE_DESCRIPTIONS: Record<number, string> = {

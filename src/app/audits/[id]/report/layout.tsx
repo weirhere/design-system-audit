@@ -42,7 +42,7 @@ export default function ReportLayout({
         </div>
       )}
       <div className="flex gap-6">
-        <nav className="w-48 shrink-0">
+        <nav className="w-48 shrink-0 sticky top-[113px] self-start pt-4">
           <ul className="space-y-1">
             {navItems.map((item) => {
               const href = `${basePath}${item.segment}`;

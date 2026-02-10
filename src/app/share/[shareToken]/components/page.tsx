@@ -6,6 +6,7 @@ import { useSharedAudit } from '@/hooks/use-shared-audit';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ClassificationBadge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import { CLASSIFICATION_LABELS } from '@/lib/constants';
 
 interface Component {
   id: string;
@@ -104,9 +105,9 @@ export default function SharedComponentsPage() {
           className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="all">All Classifications</option>
-          <option value="inherit">Inherit</option>
-          <option value="adapt">Adapt</option>
-          <option value="extend">Extend</option>
+          <option value="inherit">{CLASSIFICATION_LABELS.inherit}</option>
+          <option value="adapt">{CLASSIFICATION_LABELS.adapt}</option>
+          <option value="extend">{CLASSIFICATION_LABELS.extend}</option>
           <option value="unclassified">Unclassified</option>
         </select>
       </div>
