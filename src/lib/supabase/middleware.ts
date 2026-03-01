@@ -57,8 +57,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect unauthenticated users to login
-  if (!user && pathname !== '/login') {
+  // Redirect unauthenticated users to login (allow landing page)
+  if (!user && pathname !== '/login' && pathname !== '/') {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
